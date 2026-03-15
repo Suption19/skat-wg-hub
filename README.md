@@ -91,8 +91,6 @@ Dann erreichbar unter:
 - Backend API: `http://localhost:3000/api/health`
 
 Login im Dev-Modus:
-- Benutzer: `Tomasz`, `Finn`, `Nele`, `Leila`
-- Initialpasswort: `123`
 - Nach dem ersten Login kann das Passwort in der Unterseite `Passwort` geändert werden.
 - Session bleibt per Cookie bis zu 6 Monate aktiv (auch nach Browser-Neustart).
 

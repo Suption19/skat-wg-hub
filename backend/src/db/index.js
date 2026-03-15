@@ -1,5 +1,6 @@
 ﻿const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const sqlite3 = require('sqlite3').verbose();
 
 const FIXED_RESIDENTS = [
@@ -10,6 +11,7 @@ const FIXED_RESIDENTS = [
 ];
 
 const START_TASK_TYPES = ['Müll rausbringen', 'Küche aufräumen', 'Staubsaugen'];
+const DEFAULT_PASSWORD = '123';
 
 const FIXED_WASTE_SCHEDULE_2026 = [
   { date: '2026-01-02', type: 'Restmüll' },
@@ -46,6 +48,15 @@ const dataDir = path.resolve(__dirname, '../../data');
 const dbPath = path.join(dataDir, 'wg-hub.db');
 
 let db;
+
+function createPasswordHashSync(password) {
+  const iterations = 120000;
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derived = crypto
+    .pbkdf2Sync(String(password), salt, iterations, 32, 'sha256')
+    .toString('hex');
+  return `${iterations}$${salt}$${derived}`;
+}
 
 function toIsoDate(date) {
   return date.toISOString().slice(0, 10);
@@ -108,6 +119,149 @@ async function ensureColumn(tableName, columnName, sqlType) {
   }
 }
 
+async function migrateTaskTypesCycleConstraintIfNeeded() {
+  const tableInfo = await getOne(
+    `
+      SELECT sql
+      FROM sqlite_master
+      WHERE type = 'table' AND name = 'task_types'
+    `
+  );
+
+  const createSql = String((tableInfo && tableInfo.sql) || '').toLowerCase();
+  if (createSql.includes("'biweekly'")) {
+    return;
+  }
+
+  await run('PRAGMA foreign_keys = OFF');
+  try {
+    await run('ALTER TABLE task_types RENAME TO task_types_old');
+
+    await run(`
+      CREATE TABLE task_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        cycle TEXT NOT NULL CHECK (cycle IN ('once', 'weekly', 'biweekly', 'monthly')),
+        one_time_date TEXT,
+        day_of_month INTEGER,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+
+    await run(`
+      INSERT INTO task_types (id, name, description, cycle, one_time_date, day_of_month, is_active, created_at)
+      SELECT id, name, description, cycle, one_time_date, day_of_month, is_active, created_at
+      FROM task_types_old
+    `);
+
+    await run('DROP TABLE task_types_old');
+  } finally {
+    await run('PRAGMA foreign_keys = ON');
+  }
+}
+
+async function repairTaskTypeForeignKeysIfNeeded() {
+  const taskTypeResidentsInfo = await getOne(
+    `
+      SELECT sql
+      FROM sqlite_master
+      WHERE type = 'table' AND name = 'task_type_residents'
+    `
+  );
+  const weeklyAssignmentsInfo = await getOne(
+    `
+      SELECT sql
+      FROM sqlite_master
+      WHERE type = 'table' AND name = 'weekly_assignments'
+    `
+  );
+
+  const hasBrokenTaskTypeResidentsRef = String(
+    (taskTypeResidentsInfo && taskTypeResidentsInfo.sql) || ''
+  )
+    .toLowerCase()
+    .includes('task_types_old');
+  const hasBrokenWeeklyAssignmentsRef = String(
+    (weeklyAssignmentsInfo && weeklyAssignmentsInfo.sql) || ''
+  )
+    .toLowerCase()
+    .includes('task_types_old');
+
+  if (!hasBrokenTaskTypeResidentsRef && !hasBrokenWeeklyAssignmentsRef) {
+    return;
+  }
+
+  const weeklyColumns = await getAll('PRAGMA table_info(weekly_assignments)');
+  const weeklyHasDetails = weeklyColumns.some((column) => column.name === 'details');
+
+  await run('PRAGMA foreign_keys = OFF');
+  try {
+    if (hasBrokenTaskTypeResidentsRef) {
+      await run('ALTER TABLE task_type_residents RENAME TO task_type_residents_old');
+      await run(`
+        CREATE TABLE task_type_residents (
+          task_type_id INTEGER NOT NULL,
+          resident_id INTEGER NOT NULL,
+          PRIMARY KEY (task_type_id, resident_id),
+          FOREIGN KEY (task_type_id) REFERENCES task_types(id) ON DELETE CASCADE,
+          FOREIGN KEY (resident_id) REFERENCES residents(id) ON DELETE CASCADE
+        )
+      `);
+      await run(`
+        INSERT OR IGNORE INTO task_type_residents (task_type_id, resident_id)
+        SELECT task_type_id, resident_id
+        FROM task_type_residents_old
+      `);
+      await run('DROP TABLE task_type_residents_old');
+    }
+
+    if (hasBrokenWeeklyAssignmentsRef) {
+      await run('ALTER TABLE weekly_assignments RENAME TO weekly_assignments_old');
+      await run(`
+        CREATE TABLE weekly_assignments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          week_start TEXT NOT NULL,
+          task_type_id INTEGER NOT NULL,
+          resident_id INTEGER,
+          details TEXT,
+          status TEXT NOT NULL DEFAULT 'open',
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          UNIQUE (week_start, task_type_id),
+          FOREIGN KEY (task_type_id) REFERENCES task_types(id) ON DELETE CASCADE,
+          FOREIGN KEY (resident_id) REFERENCES residents(id) ON DELETE SET NULL
+        )
+      `);
+
+      const detailsSelection = weeklyHasDetails ? 'details' : 'NULL';
+      await run(`
+        INSERT INTO weekly_assignments (
+          id,
+          week_start,
+          task_type_id,
+          resident_id,
+          details,
+          status,
+          created_at
+        )
+        SELECT
+          id,
+          week_start,
+          task_type_id,
+          resident_id,
+          ${detailsSelection},
+          status,
+          created_at
+        FROM weekly_assignments_old
+      `);
+      await run('DROP TABLE weekly_assignments_old');
+    }
+  } finally {
+    await run('PRAGMA foreign_keys = ON');
+  }
+}
+
 async function initializeDatabase() {
   await run('PRAGMA journal_mode = WAL');
   await run('PRAGMA foreign_keys = ON');
@@ -124,6 +278,40 @@ async function initializeDatabase() {
 
   await run(
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_residents_name_unique ON residents(name)'
+  );
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      resident_id INTEGER,
+      must_change_password INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (resident_id) REFERENCES residents(id) ON DELETE SET NULL
+    )
+  `);
+
+  await ensureColumn('users', 'resident_id', 'INTEGER');
+  await ensureColumn('users', 'must_change_password', 'INTEGER NOT NULL DEFAULT 1');
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS auth_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  await run(
+    'CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_id ON auth_sessions(user_id)'
+  );
+
+  await run(
+    'CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at)'
   );
 
   await run(`
@@ -189,17 +377,51 @@ async function initializeDatabase() {
   await ensureColumn('calendar_events', 'duration_days', 'INTEGER NOT NULL DEFAULT 1');
 
   await run(`
+    CREATE TABLE IF NOT EXISTS shopping_list_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      text TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS skat_games (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'finished')),
+      started_at TEXT NOT NULL DEFAULT (datetime('now')),
+      finished_at TEXT
+    )
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS skat_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      game_id INTEGER NOT NULL,
+      round_no INTEGER NOT NULL,
+      resident_id INTEGER,
+      player_name TEXT NOT NULL,
+      points INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (game_id) REFERENCES skat_games(id) ON DELETE CASCADE,
+      FOREIGN KEY (resident_id) REFERENCES residents(id) ON DELETE SET NULL
+    )
+  `);
+
+  await run(`
     CREATE TABLE IF NOT EXISTS task_types (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       description TEXT,
-      cycle TEXT NOT NULL CHECK (cycle IN ('once', 'weekly', 'monthly')),
+      cycle TEXT NOT NULL CHECK (cycle IN ('once', 'weekly', 'biweekly', 'monthly')),
       one_time_date TEXT,
       day_of_month INTEGER,
       is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+
+  await migrateTaskTypesCycleConstraintIfNeeded();
+  await repairTaskTypeForeignKeysIfNeeded();
 
   await ensureColumn('task_types', 'description', 'TEXT');
 
@@ -274,6 +496,47 @@ async function initializeDatabase() {
   const residents = await getAll('SELECT id, name FROM residents ORDER BY id ASC');
   const allResidentIds = residents.map((resident) => resident.id);
 
+  for (const resident of FIXED_RESIDENTS) {
+    const linkedResident = residents.find((item) => item.name === resident.name);
+    if (!linkedResident) continue;
+
+    const existingUser = await getOne(
+      'SELECT id, password_hash AS passwordHash FROM users WHERE username = ?',
+      [resident.name]
+    );
+
+    if (!existingUser) {
+      await run(
+        `
+          INSERT INTO users (username, password_hash, resident_id, must_change_password)
+          VALUES (?, ?, ?, 1)
+        `,
+        [resident.name, createPasswordHashSync(DEFAULT_PASSWORD), linkedResident.id]
+      );
+      continue;
+    }
+
+    if (!existingUser.passwordHash) {
+      await run(
+        'UPDATE users SET password_hash = ?, resident_id = ? WHERE id = ?',
+        [createPasswordHashSync(DEFAULT_PASSWORD), linkedResident.id, existingUser.id]
+      );
+      continue;
+    }
+
+    await run('UPDATE users SET resident_id = ? WHERE id = ?', [
+      linkedResident.id,
+      existingUser.id,
+    ]);
+  }
+
+  await run(
+    'DELETE FROM users WHERE username NOT IN (?, ?, ?, ?)',
+    FIXED_RESIDENTS.map((resident) => resident.name)
+  );
+
+  await run('DELETE FROM auth_sessions WHERE expires_at <= datetime(\'now\')');
+
   const taskTypeCount = await getOne('SELECT COUNT(*) AS total FROM task_types');
   if (taskTypeCount.total === 0) {
     for (const taskName of START_TASK_TYPES) {
@@ -294,24 +557,6 @@ async function initializeDatabase() {
     }
   }
 
-  const absencesCount = await getOne('SELECT COUNT(*) AS total FROM absences');
-  if (absencesCount.total === 0) {
-    await run(
-      `INSERT INTO absences (resident_id, person, start_date, end_date, note) VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)`,
-      [
-        residents[0] ? residents[0].id : null,
-        residents[0] ? residents[0].name : 'Tomasz',
-        '2026-03-16',
-        '2026-03-20',
-        'Dienstreise',
-        residents[1] ? residents[1].id : null,
-        residents[1] ? residents[1].name : 'Finn',
-        '2026-03-18',
-        '2026-03-19',
-        'Besuch bei Familie',
-      ]
-    );
-  }
 
   await run('DELETE FROM waste_dates');
   for (const wasteDate of FIXED_WASTE_SCHEDULE_2026) {

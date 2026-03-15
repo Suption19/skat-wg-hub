@@ -490,6 +490,17 @@ th {
   cursor: pointer;
 }
 
+.ghost-secondary {
+  border: 1px solid #dfe5ee;
+  background: #ffffff;
+  color: var(--text);
+  border-radius: 8px;
+  min-height: 2rem;
+  padding: 0.35rem 0.55rem;
+  margin-right: 0.35rem;
+  cursor: pointer;
+}
+
 .ghost-danger {
   border-color: rgba(255, 122, 122, 0.4);
   color: #ffc7c7;
@@ -601,6 +612,20 @@ th {
 
 .mobile-action-cell button {
   min-height: 2.05rem;
+}
+
+.action-inline-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.action-inline-buttons .ghost-secondary,
+.action-inline-buttons .ghost-danger {
+  margin-right: 0;
+  min-height: 1.9rem;
+  padding: 0.28rem 0.5rem;
+  font-size: 0.82rem;
 }
 
 .task-status-page {
@@ -1006,18 +1031,26 @@ th {
   }
 
   .tasks-page .mobile-action-cell {
-    grid-template-columns: 1fr;
-    justify-items: stretch;
+    grid-template-columns: minmax(92px, 110px) 1fr;
+    align-items: center;
   }
 
   .tasks-page .mobile-action-cell::before {
     margin-bottom: 0.2rem;
   }
 
-  .tasks-page .mobile-action-cell button {
-    width: 100%;
-    min-height: 2.25rem;
-    border-radius: 10px;
+  .tasks-page .mobile-action-cell .action-inline-buttons {
+    display: inline-flex;
+    gap: 0.35rem;
+    justify-self: start;
+  }
+
+  .tasks-page .mobile-action-cell .action-inline-buttons button {
+    width: auto;
+    min-height: 1.9rem;
+    border-radius: 9px;
+    padding: 0.24rem 0.48rem;
+    font-size: 0.8rem;
   }
 
   .status-week-head {
@@ -1406,6 +1439,316 @@ body {
 .week-task-list {
   display: grid;
   gap: 0.55rem;
+}
+
+.shopping-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  margin-bottom: 0.55rem;
+}
+
+.shopping-form input {
+  min-height: 2.15rem;
+  border-radius: 12px;
+  border: 1px solid #e3e8f0;
+  background: #ffffff;
+  color: #1f2636;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+}
+
+.shopping-form button {
+  min-height: 2.15rem;
+  border-radius: 12px;
+  border: 1px solid #cdd9ef;
+  background: #edf3ff;
+  color: #304267;
+  padding: 0.45rem 0.7rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.shopping-list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.shopping-item {
+  border: 1px solid #e8edf6;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0.45rem 0.55rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.shopping-item p {
+  margin: 0;
+  font-size: 0.86rem;
+  color: #273046;
+}
+
+.shopping-delete-button {
+  min-height: 1.8rem;
+  border-radius: 9px;
+  border: 1px solid #eecaca;
+  background: #fff1f1;
+  color: #9a3f4d;
+  font-size: 0.74rem;
+  padding: 0.25rem 0.55rem;
+  cursor: pointer;
+}
+
+.shopping-delete-button:disabled,
+.shopping-form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.skat-page {
+  display: grid;
+  gap: 0.78rem;
+}
+
+.skat-podium-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.skat-podium-grid.compact {
+  margin-top: 0.15rem;
+  margin-bottom: 0.55rem;
+}
+
+.skat-podium-grid.compact .podium-item {
+  padding: 0.45rem;
+}
+
+.skat-podium-grid.compact .podium-avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.skat-podium-grid.compact .podium-item strong {
+  font-size: 0.84rem;
+}
+
+.skat-podium-grid.compact .podium-item p {
+  font-size: 0.74rem;
+}
+
+.skat-link-button {
+  min-height: 2.1rem;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #cdd9ef;
+  background: #edf3ff;
+  color: #304267;
+  cursor: pointer;
+}
+
+.skat-link-button:hover {
+  background: #e3ecff;
+}
+
+.podium-item {
+  border: 1px solid #e5eaf4;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 0.58rem;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 0.2rem;
+}
+
+.podium-item.rank-1 {
+  border-color: #eddba0;
+  background: #fff9e9;
+}
+
+.podium-item.rank-2 {
+  border-color: #d7dcea;
+  background: #f6f8fd;
+}
+
+.podium-item.rank-3 {
+  border-color: #e8d7cb;
+  background: #fdf7f3;
+}
+
+.podium-medal {
+  font-size: 1.2rem;
+}
+
+.podium-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.podium-item strong {
+  font-size: 0.92rem;
+}
+
+.podium-item p {
+  margin: 0;
+  color: #5f6980;
+  font-size: 0.78rem;
+}
+
+.skat-primary-button {
+  min-height: 2.2rem;
+  border-radius: 12px;
+  border: 1px solid #cdd9ef;
+  background: #edf3ff;
+  color: #304267;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+}
+
+.skat-primary-button b {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.skat-game-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+
+.skat-game-meta span {
+  color: #6f7789;
+  font-size: 0.78rem;
+}
+
+.skat-entry-form {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: 1fr;
+  margin-bottom: 0.55rem;
+}
+
+.skat-entry-form input,
+.skat-entry-form select,
+.skat-entry-form button {
+  min-height: 2.2rem;
+  border-radius: 12px;
+  border: 1px solid #e3e8f0;
+  background: #ffffff;
+  color: #1f2636;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+}
+
+.skat-entry-form button {
+  border-color: #cdd9ef;
+  background: #edf3ff;
+  color: #304267;
+  cursor: pointer;
+}
+
+.skat-finish-button {
+  border-color: #6cad82 !important;
+  background: #5bad7a !important;
+  color: #ffffff !important;
+}
+
+.skat-finish-button:hover {
+  background: #4f9f6d !important;
+  border-color: #4f9f6d !important;
+}
+
+.skat-totals {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.skat-total-item {
+  border: 1px solid #e8edf6;
+  background: #ffffff;
+  border-radius: 11px;
+  padding: 0.4rem 0.52rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.skat-total-item strong {
+  font-size: 0.84rem;
+}
+
+.skat-total-item span {
+  font-weight: 700;
+}
+
+.skat-games-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.skat-game-item {
+  border: 1px solid #e5eaf2;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.skat-game-item header {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.skat-game-item h3 {
+  font-size: 0.93rem;
+}
+
+.skat-game-item header p {
+  margin: 0;
+  color: #6f7789;
+  font-size: 0.76rem;
+}
+
+.skat-round-list {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.skat-round-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: center;
+  border: 1px solid #eff2f7;
+  border-radius: 10px;
+  background: #fbfcff;
+  padding: 0.35rem 0.45rem;
+}
+
+
+.skat-round-row strong {
+  font-size: 0.82rem;
+}
+
+.skat-round-row b {
+  font-size: 0.82rem;
 }
 
 .done-task-panel {
@@ -1864,6 +2207,112 @@ body {
 .event-save-button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.success-text {
+  color: #2f8a57;
+  font-size: 0.86rem;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border: 1px solid #e5eaf2;
+  border-radius: 22px;
+  box-shadow: 0 12px 26px rgba(17, 26, 40, 0.08);
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.login-card h1 {
+  font-size: 1.22rem;
+}
+
+.login-card p {
+  color: #667085;
+  font-size: 0.92rem;
+}
+
+.login-form {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.login-form label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.84rem;
+  color: #4d566b;
+}
+
+.login-form input {
+  min-height: 2.35rem;
+  border-radius: 11px;
+  border: 1px solid #dfe5ee;
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+}
+
+.login-form button {
+  margin-top: 0.1rem;
+}
+
+.auth-primary-button {
+  border-radius: 12px;
+  min-height: 2.35rem;
+  border: 1px solid #6cad82;
+  background: #5bad7a;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease,
+    box-shadow 0.16s ease;
+  margin-top: 0.1rem;
+}
+
+.auth-primary-button:hover,
+.auth-primary-button:focus-visible {
+  background: #4f9f6d;
+  border-color: #4f9f6d;
+  box-shadow: 0 0 0 3px rgba(79, 159, 109, 0.2);
+}
+
+.auth-primary-button:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.password-settings-hint {
+  margin-top: -0.15rem;
+  font-size: 0.86rem;
+  color: #667085;
+}
+
+.password-form {
+  gap: 0.65rem;
+}
+
+.password-form label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.84rem;
+  color: #4d566b;
+}
+
+.profile-panel .resident-option {
+  width: 100%;
+  justify-content: center;
 }
 
 @media (min-width: 700px) {

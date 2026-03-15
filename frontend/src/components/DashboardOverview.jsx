@@ -10,10 +10,37 @@ const EVENT_LABELS = {
   abwesenheit: 'Abwesenheit',
 };
 
+const FINISHED_TASK_MESSAGES = [
+  'Tomasz ist sehr stolz auf dich. Finn hat schon den imaginären Pokal poliert.',
+  'Nele vergibt heute 5 von 5 Sternen für deinen WG-Endgegner-Run.',
+  'Leila sagt: Das war so gut, sogar der Putzplan hat geklatscht.',
+  'Tomasz und Finn diskutieren gerade, wer dir zuerst eine High Five geben darf.',
+  'Nele und Leila bestätigen offiziell: Heute bist du WG-MVP.',
+  'Die WG-Headline des Tages lautet: Mission erledigt, Chaos vertagt.',
+  'Finn meint: So sauber war die Woche zuletzt im Paralleluniversum.',
+  'Tomasz nickt zufrieden, Nele lacht, Leila feiert und Finn macht Victory-Dance.',
+];
+
 function formatShortDate(isoDate) {
   const [year, month, day] = String(isoDate || '').split('-');
   if (!year || !month || !day) return isoDate;
   return `${day}.${month}.`;
+}
+
+function formatWeekStartLabel(isoDate) {
+  const [year, month, day] = String(isoDate || '').split('-');
+  if (!year || !month || !day) return '-';
+  return `${day}.${month}.${year.slice(2)}`;
+}
+
+function buildFinishedMessage(templateIndex) {
+  const template =
+    FINISHED_TASK_MESSAGES[
+      ((templateIndex % FINISHED_TASK_MESSAGES.length) + FINISHED_TASK_MESSAGES.length) %
+        FINISHED_TASK_MESSAGES.length
+    ];
+
+  return template;
 }
 
 function buildMonthListItems(monthEvents) {
@@ -60,7 +87,7 @@ function buildMonthListItems(monthEvents) {
   });
 }
 
-function DashboardOverview({ residents, activeResidentId }) {
+function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
   const [data, setData] = useState({
     assignments: [],
     calendarItems: [],
@@ -73,6 +100,12 @@ function DashboardOverview({ residents, activeResidentId }) {
   const [confirmAssignment, setConfirmAssignment] = useState(null);
   const [isUpdatingAssignment, setIsUpdatingAssignment] = useState(false);
   const [showDoneAssignments, setShowDoneAssignments] = useState(false);
+  const [shoppingItems, setShoppingItems] = useState([]);
+  const [shoppingInput, setShoppingInput] = useState('');
+  const [shoppingError, setShoppingError] = useState('');
+  const [isShoppingLoading, setIsShoppingLoading] = useState(true);
+  const [isShoppingSaving, setIsShoppingSaving] = useState(false);
+  const [deletingShoppingItemId, setDeletingShoppingItemId] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
   const [eventForm, setEventForm] = useState({
@@ -85,6 +118,15 @@ function DashboardOverview({ residents, activeResidentId }) {
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const [eventDeleteCandidate, setEventDeleteCandidate] = useState(null);
   const [eventError, setEventError] = useState('');
+  const [skatAllTime, setSkatAllTime] = useState([]);
+  const [finishedMessageIndex] = useState(() =>
+    Math.floor(Math.random() * FINISHED_TASK_MESSAGES.length)
+  );
+
+  async function loadShoppingItems() {
+    const response = await requestJson('/api/shopping-list');
+    setShoppingItems(response.items || []);
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -92,9 +134,11 @@ function DashboardOverview({ residents, activeResidentId }) {
     async function load() {
       const initialYear = String(monthCursor.getUTCFullYear());
       try {
-        const [assignmentsRes, calendarRes] = await Promise.all([
+        const [assignmentsRes, calendarRes, shoppingRes, skatRes] = await Promise.all([
           requestJson('/api/weekly-assignments'),
           requestJson(`/api/calendar?year=${initialYear}`),
+          requestJson('/api/shopping-list'),
+          requestJson('/api/skat/overview'),
         ]);
 
         if (!mounted) return;
@@ -104,6 +148,10 @@ function DashboardOverview({ residents, activeResidentId }) {
           calendarItems: calendarRes.items || [],
           weekStart: assignmentsRes.weekStart || '',
         });
+        setShoppingItems(shoppingRes.items || []);
+        setSkatAllTime(skatRes.allTime || []);
+        setShoppingError('');
+        setIsShoppingLoading(false);
       } catch (error) {
         if (mounted) {
           setData({
@@ -111,6 +159,10 @@ function DashboardOverview({ residents, activeResidentId }) {
             calendarItems: [],
             weekStart: '',
           });
+          setShoppingItems([]);
+          setSkatAllTime([]);
+          setShoppingError(error.message);
+          setIsShoppingLoading(false);
         }
       }
     }
@@ -215,6 +267,7 @@ function DashboardOverview({ residents, activeResidentId }) {
 
   const activeResident = residents.find((resident) => resident.id === activeResidentId);
   const activeVisual = getResidentVisual(activeResident ? activeResident.name : '');
+  const finishedMessage = buildFinishedMessage(finishedMessageIndex);
 
   function shiftMonth(delta) {
     setMonthCursor((current) =>
@@ -249,6 +302,41 @@ function DashboardOverview({ residents, activeResidentId }) {
       setConfirmAssignment(null);
     } finally {
       setIsUpdatingAssignment(false);
+    }
+  }
+
+  async function handleAddShoppingItem(event) {
+    event.preventDefault();
+    if (!shoppingInput.trim() || isShoppingSaving) return;
+
+    setShoppingError('');
+    setIsShoppingSaving(true);
+    try {
+      await requestJson('/api/shopping-list', {
+        method: 'POST',
+        body: JSON.stringify({ text: shoppingInput.trim() }),
+      });
+      setShoppingInput('');
+      await loadShoppingItems();
+    } catch (error) {
+      setShoppingError(error.message);
+    } finally {
+      setIsShoppingSaving(false);
+    }
+  }
+
+  async function handleDeleteShoppingItem(id) {
+    if (deletingShoppingItemId) return;
+
+    setShoppingError('');
+    setDeletingShoppingItemId(id);
+    try {
+      await requestJson(`/api/shopping-list/${id}`, { method: 'DELETE' });
+      await loadShoppingItems();
+    } catch (error) {
+      setShoppingError(error.message);
+    } finally {
+      setDeletingShoppingItemId(null);
     }
   }
 
@@ -345,7 +433,7 @@ function DashboardOverview({ residents, activeResidentId }) {
         <div className="section-row">
           <h2>Deine Aufgaben</h2>
           <span className="section-meta">
-            KW ab {data.weekStart || '-'}
+            KW ab {formatWeekStartLabel(data.weekStart)}
           </span>
         </div>
 
@@ -379,54 +467,45 @@ function DashboardOverview({ residents, activeResidentId }) {
             <div className="task-finished-card">
               <span className="task-finished-icon" aria-hidden="true">👍</span>
               <h3>Richtig gut gemacht!</h3>
-              <p>Alles für diese Woche ist erledigt. Starkes Teamwork!</p>
+              <p>Alles für diese Woche ist erledigt.</p>
+              <p>{finishedMessage}</p>
             </div>
           ) : null}
 
-          {openAssignments.length === 0 && doneAssignments.length === 0 ? (
-            <div className="task-mini-card tone-mint">
-              <div className="task-mini-head">
-                <h3>Keine Aufgaben</h3>
-                <span className="status-pill">frei</span>
-              </div>
-              <p>Diese Woche ist aktuell nichts auf dich zugewiesen.</p>
-            </div>
-          ) : (
-            openAssignments.map((assignment, index) => {
-              const tones = ['tone-mint', 'tone-lavender', 'tone-cream', 'tone-sky'];
-              return (
-                <article
-                  key={assignment.id}
-                  className={`task-mini-card ${tones[index % tones.length]}`}
-                >
-                  <div className="task-mini-head">
-                    <h3>{assignment.taskName}</h3>
-                    <span className="status-pill">
-                      {assignment.status === 'done' ? 'done' : 'ongoing'}
-                    </span>
-                  </div>
-                  <p>{assignment.details || 'Diese Woche normal erledigen.'}</p>
-                  <div className="task-mini-footer">
-                    <span
-                      className="resident-chip"
-                      style={{ backgroundColor: activeVisual.color }}
+          {openAssignments.map((assignment, index) => {
+            const tones = ['tone-mint', 'tone-lavender', 'tone-cream', 'tone-sky'];
+            return (
+              <article
+                key={assignment.id}
+                className={`task-mini-card ${tones[index % tones.length]}`}
+              >
+                <div className="task-mini-head">
+                  <h3>{assignment.taskName}</h3>
+                  <span className="status-pill">
+                    {assignment.status === 'done' ? 'done' : 'ongoing'}
+                  </span>
+                </div>
+                <p>{assignment.details || 'Diese Woche normal erledigen.'}</p>
+                <div className="task-mini-footer">
+                  <span
+                    className="resident-chip"
+                    style={{ backgroundColor: activeVisual.color }}
+                  >
+                    {activeVisual.avatar} {activeResident ? activeResident.name : ''}
+                  </span>
+                  {assignment.status !== 'done' ? (
+                    <button
+                      type="button"
+                      className="task-done-button"
+                      onClick={() => setConfirmAssignment(assignment)}
                     >
-                      {activeVisual.avatar} {activeResident ? activeResident.name : ''}
-                    </span>
-                    {assignment.status !== 'done' ? (
-                      <button
-                        type="button"
-                        className="task-done-button"
-                        onClick={() => setConfirmAssignment(assignment)}
-                      >
-                        Als fertig markieren
-                      </button>
-                    ) : null}
-                  </div>
-                </article>
-              );
-            })
-          )}
+                      Als fertig markieren
+                    </button>
+                  ) : null}
+                </div>
+              </article>
+            );
+          })}
 
           {showDoneAssignments && doneAssignments.length > 0 ? (
             <section className="done-task-panel">
@@ -444,6 +523,48 @@ function DashboardOverview({ residents, activeResidentId }) {
               </div>
             </section>
           ) : null}
+        </div>
+      </section>
+
+      <section className="home-section shopping-section">
+        <div className="section-row">
+          <h2>Einkaufsliste</h2>
+          <span className="section-meta">{shoppingItems.length} Einträge</span>
+        </div>
+
+        <form className="shopping-form" onSubmit={handleAddShoppingItem}>
+          <input
+            placeholder="Was muss gekauft werden?"
+            value={shoppingInput}
+            onChange={(event) => setShoppingInput(event.target.value)}
+          />
+          <button type="submit" disabled={isShoppingSaving}>
+            {isShoppingSaving ? 'Speichert...' : 'Hinzufügen'}
+          </button>
+        </form>
+
+        {shoppingError ? <p className="error-text">{shoppingError}</p> : null}
+
+        <div className="shopping-list">
+          {isShoppingLoading ? (
+            <p className="task-status-empty">Lade Einkaufsliste...</p>
+          ) : shoppingItems.length === 0 ? (
+            <p className="task-status-empty">Noch nichts auf der Liste.</p>
+          ) : (
+            shoppingItems.map((item) => (
+              <article key={item.id} className="shopping-item">
+                <p>{item.text}</p>
+                <button
+                  type="button"
+                  className="shopping-delete-button"
+                  onClick={() => handleDeleteShoppingItem(item.id)}
+                  disabled={deletingShoppingItemId === item.id}
+                >
+                  {deletingShoppingItemId === item.id ? 'Löscht...' : 'Entfernen'}
+                </button>
+              </article>
+            ))
+          )}
         </div>
       </section>
 
@@ -467,7 +588,7 @@ function DashboardOverview({ residents, activeResidentId }) {
         ) : null}
 
         <div className="calendar-weekdays">
-          {['Mo', 'Di', 'Mi', 'Do', 'FÜr', 'Sa', 'So'].map((day) => (
+          {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day) => (
             <span key={day}>{day}</span>
           ))}
         </div>
@@ -519,6 +640,49 @@ function DashboardOverview({ residents, activeResidentId }) {
             </ul>
           )}
         </div>
+      </section>
+
+      <section className="home-section skat-preview-section">
+        <div className="section-row">
+          <h2>Skat-Podium</h2>
+          <span className="section-meta">All-Time</span>
+        </div>
+
+        <div className="skat-podium-grid compact">
+          {skatAllTime.slice(0, 4).map((item) => {
+            const visual = getResidentVisual(item.residentName);
+            return (
+              <article key={item.residentId} className={`podium-item rank-${item.rank}`}>
+                <div className="podium-medal" aria-hidden="true">
+                  {item.medal === 'gold'
+                    ? '🥇'
+                    : item.medal === 'silver'
+                      ? '🥈'
+                      : item.medal === 'bronze'
+                        ? '🥉'
+                        : '🏅'}
+                </div>
+                <span className="podium-avatar" style={{ backgroundColor: visual.color }}>
+                  {visual.avatar}
+                </span>
+                <strong>{item.residentName}</strong>
+                <p>{item.totalPoints} Punkte</p>
+              </article>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          className="skat-link-button"
+          onClick={() => {
+            if (onOpenSkat) {
+              onOpenSkat();
+            }
+          }}
+        >
+          Öffnen
+        </button>
       </section>
 
       {confirmAssignment ? (
@@ -607,7 +771,7 @@ function DashboardOverview({ residents, activeResidentId }) {
                   setEventError('');
                 }}
               >
-                Termin hinzufuegen
+                Termin hinzufügen
               </button>
             ) : (
               <form onSubmit={handleCreateEvent} className="event-create-form">
@@ -725,7 +889,7 @@ function DashboardOverview({ residents, activeResidentId }) {
                 onClick={confirmDeleteEventOccurrence}
                 disabled={isDeletingEvent}
               >
-                {isDeletingEvent ? 'Loescht...' : 'Ja, löschen'}
+                {isDeletingEvent ? 'Löscht...' : 'Ja, löschen'}
               </button>
             </div>
           </div>

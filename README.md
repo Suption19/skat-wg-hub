@@ -90,6 +90,12 @@ Dann erreichbar unter:
 - Frontend (Vite): `http://localhost:5173`
 - Backend API: `http://localhost:3000/api/health`
 
+Login im Dev-Modus:
+- Benutzer: `Tomasz`, `Finn`, `Nele`, `Leila`
+- Initialpasswort: `123`
+- Nach dem ersten Login kann das Passwort in der Unterseite `Passwort` geändert werden.
+- Session bleibt per Cookie bis zu 6 Monate aktiv (auch nach Browser-Neustart).
+
 ## Build + Produktion (Pi / LAN)
 
 1. Frontend bauen
@@ -120,6 +126,11 @@ Im Netzwerk erreichbar unter:
 
 - Health
   - `GET /api/health`
+- Auth
+  - `POST /api/auth/login`
+  - `POST /api/auth/logout`
+  - `GET /api/auth/me`
+  - `POST /api/auth/change-password`
 - Bewohner
   - `GET /api/residents`
   - `GET /api/residents/:id`

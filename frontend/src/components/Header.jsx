@@ -18,9 +18,9 @@ function Header({
   navItems,
   activeView,
   onChangeView,
-  residents,
-  activeResidentId,
-  onChangeActiveResidentId,
+  currentUser,
+  onOpenSettings,
+  onLogout,
 }) {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -28,9 +28,7 @@ function Header({
     () => HEADER_SLOGANS[Math.floor(Math.random() * HEADER_SLOGANS.length)]
   );
 
-  const activeResident =
-    residents.find((resident) => resident.id === activeResidentId) || null;
-  const visual = getResidentVisual(activeResident ? activeResident.name : '');
+  const visual = getResidentVisual(currentUser ? currentUser.residentName : '');
 
   function handleSelect(viewId) {
     onChangeView(viewId);
@@ -76,7 +74,7 @@ function Header({
               ▾
             </span>
             <div className="identity-text">
-              <h1>{activeResident ? activeResident.name : 'WG Hub'}</h1>
+              <h1>{currentUser ? currentUser.residentName : 'WG Hub'}</h1>
               <p>{headerSlogan}</p>
             </div>
           </button>
@@ -84,33 +82,27 @@ function Header({
           {isProfileOpen ? (
             <div className="profile-panel card">
               <h3>Profil</h3>
-              <p>Wähle aus, wer du bist.</p>
-              <div className="resident-options">
-                {residents.map((resident) => {
-                  const optionVisual = getResidentVisual(resident.name);
-                  const isActive = resident.id === activeResidentId;
-                  return (
-                    <button
-                      key={resident.id}
-                      type="button"
-                      className={`resident-option ${isActive ? 'active' : ''}`}
-                      onClick={() => {
-                        onChangeActiveResidentId(resident.id);
-                        setIsProfileOpen(false);
-                      }}
-                    >
-                      <span
-                        className="resident-option-avatar"
-                        style={{ backgroundColor: optionVisual.color }}
-                        aria-hidden="true"
-                      >
-                        {optionVisual.avatar}
-                      </span>
-                      <span>{resident.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <p>Eingeloggt als {currentUser ? currentUser.username : '-'}</p>
+              <button
+                type="button"
+                className="resident-option"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  if (onOpenSettings) onOpenSettings();
+                }}
+              >
+                Passwort ändern
+              </button>
+              <button
+                type="button"
+                className="resident-option"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  if (onLogout) onLogout();
+                }}
+              >
+                Abmelden
+              </button>
             </div>
           ) : null}
         </div>

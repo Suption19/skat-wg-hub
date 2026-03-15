@@ -11,11 +11,21 @@ const initialForm = {
   residentIds: [],
 };
 
+const CYCLE_LABELS = {
+  weekly: 'Wöchentlich',
+  biweekly: 'Alle 2 Wochen',
+  monthly: 'Monatlich',
+  once: 'Einmalig',
+};
+
 function TasksSection() {
   const [taskTypes, setTaskTypes] = useState([]);
   const [residents, setResidents] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [deleteCandidate, setDeleteCandidate] = useState(null);
+  const [editCandidate, setEditCandidate] = useState(null);
+  const [editForm, setEditForm] = useState(initialForm);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [error, setError] = useState('');
 
   async function loadData() {
@@ -81,6 +91,60 @@ function TasksSection() {
     });
   }
 
+  function openEditModal(taskType) {
+    setEditCandidate(taskType);
+    setEditForm({
+      name: taskType.name || '',
+      description: taskType.description || '',
+      cycle: taskType.cycle || 'weekly',
+      oneTimeDate: taskType.oneTimeDate || '',
+      dayOfMonth: taskType.dayOfMonth ? String(taskType.dayOfMonth) : '',
+      residentIds: Array.isArray(taskType.residentIds) ? [...taskType.residentIds] : [],
+    });
+  }
+
+  function toggleEditResidentSelection(residentId) {
+    setEditForm((current) => {
+      const exists = current.residentIds.includes(residentId);
+      return {
+        ...current,
+        residentIds: exists
+          ? current.residentIds.filter((id) => id !== residentId)
+          : [...current.residentIds, residentId],
+      };
+    });
+  }
+
+  async function handleSaveEdit(event) {
+    event.preventDefault();
+    if (!editCandidate || isSavingEdit) return;
+
+    setError('');
+    setIsSavingEdit(true);
+    try {
+      await requestJson(`/api/task-types/${editCandidate.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          ...editForm,
+          description: editForm.description ? editForm.description.trim() : '',
+          dayOfMonth:
+            editForm.cycle === 'monthly' && editForm.dayOfMonth
+              ? Number(editForm.dayOfMonth)
+              : null,
+          oneTimeDate: editForm.cycle === 'once' ? editForm.oneTimeDate : null,
+        }),
+      });
+
+      setEditCandidate(null);
+      setEditForm(initialForm);
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  }
+
   return (
     <section className="card data-section tasks-page">
       <div className="section-headline">
@@ -109,6 +173,7 @@ function TasksSection() {
           onChange={(event) => setForm({ ...form, cycle: event.target.value })}
         >
           <option value="weekly">Wöchentlich</option>
+          <option value="biweekly">Alle 2 Wochen</option>
           <option value="monthly">Monatlich</option>
           <option value="once">Einmalig</option>
         </select>
@@ -181,7 +246,7 @@ function TasksSection() {
                   <td data-label="Name">{taskType.name}</td>
                   <td data-label="Beschreibung">{taskType.description || '-'}</td>
                   <td data-label="Zyklus">
-                    {taskType.cycle}
+                    {CYCLE_LABELS[taskType.cycle] || taskType.cycle}
                     {taskType.cycle === 'monthly' && taskType.dayOfMonth
                       ? ` (Tag ${taskType.dayOfMonth})`
                       : ''}
@@ -195,13 +260,22 @@ function TasksSection() {
                       : 'Alle Bewohner'}
                   </td>
                   <td data-label="Aktion" className="mobile-action-cell">
-                    <button
-                      type="button"
-                      className="ghost-danger"
-                      onClick={() => setDeleteCandidate(taskType)}
-                    >
-                      Löschen
-                    </button>
+                    <div className="action-inline-buttons">
+                      <button
+                        type="button"
+                        className="ghost-secondary"
+                        onClick={() => openEditModal(taskType)}
+                      >
+                        Bearbeiten
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-danger"
+                        onClick={() => setDeleteCandidate(taskType)}
+                      >
+                        Löschen
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -243,6 +317,120 @@ function TasksSection() {
                 Ja, löschen
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {editCandidate ? (
+        <div
+          className="confirm-modal-overlay"
+          role="presentation"
+          onClick={() => {
+            if (!isSavingEdit) {
+              setEditCandidate(null);
+              setEditForm(initialForm);
+            }
+          }}
+        >
+          <div
+            className="confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-tasktype-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 id="edit-tasktype-title">Aufgabentyp bearbeiten</h3>
+            <form className="inline-form" onSubmit={handleSaveEdit}>
+              <input
+                required
+                value={editForm.name}
+                onChange={(event) =>
+                  setEditForm((current) => ({ ...current, name: event.target.value }))
+                }
+                placeholder="Aufgabentyp"
+              />
+              <input
+                value={editForm.description}
+                onChange={(event) =>
+                  setEditForm((current) => ({ ...current, description: event.target.value }))
+                }
+                placeholder="Beschreibung (optional)"
+              />
+              <select
+                value={editForm.cycle}
+                onChange={(event) =>
+                  setEditForm((current) => ({ ...current, cycle: event.target.value }))
+                }
+              >
+                <option value="weekly">Wöchentlich</option>
+                <option value="biweekly">Alle 2 Wochen</option>
+                <option value="monthly">Monatlich</option>
+                <option value="once">Einmalig</option>
+              </select>
+
+              {editForm.cycle === 'once' ? (
+                <input
+                  required
+                  type="date"
+                  value={editForm.oneTimeDate}
+                  onChange={(event) =>
+                    setEditForm((current) => ({ ...current, oneTimeDate: event.target.value }))
+                  }
+                />
+              ) : null}
+
+              {editForm.cycle === 'monthly' ? (
+                <input
+                  required
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={editForm.dayOfMonth}
+                  onChange={(event) =>
+                    setEditForm((current) => ({ ...current, dayOfMonth: event.target.value }))
+                  }
+                  placeholder="Tag im Monat (1-31)"
+                />
+              ) : null}
+
+              <div className="scope-box">
+                <p>Berücksichtigte Bewohner</p>
+                <div className="scope-list">
+                  {residents.map((resident) => (
+                    <label key={`edit-${resident.id}`}>
+                      <input
+                        type="checkbox"
+                        checked={editForm.residentIds.includes(resident.id)}
+                        onChange={() => toggleEditResidentSelection(resident.id)}
+                      />
+                      <span>{resident.name}</span>
+                    </label>
+                  ))}
+                </div>
+                <small>Wenn nichts ausgewählt ist, gelten automatisch alle Bewohner.</small>
+              </div>
+
+              <div className="confirm-modal-actions">
+                <button
+                  type="button"
+                  className="modal-button-secondary"
+                  onClick={() => {
+                    setEditCandidate(null);
+                    setEditForm(initialForm);
+                  }}
+                  disabled={isSavingEdit}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  type="submit"
+                  className="modal-button-secondary"
+                  disabled={isSavingEdit}
+                >
+                  {isSavingEdit ? 'Speichert...' : 'Speichern'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       ) : null}

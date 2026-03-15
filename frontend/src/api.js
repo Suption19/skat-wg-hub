@@ -1,5 +1,6 @@
 export async function requestJson(path, options = {}) {
   const response = await fetch(path, {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
@@ -17,7 +18,9 @@ export async function requestJson(path, options = {}) {
     } catch (error) {
       // Ignore parse errors for empty responses.
     }
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
 
   if (response.status === 204) {

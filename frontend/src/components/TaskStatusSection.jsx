@@ -35,7 +35,7 @@ function getIsoWeekLabel(weekStart) {
 function formatDateShort(isoDate) {
   const [year, month, day] = String(isoDate || '').split('-');
   if (!year || !month || !day) return isoDate || '-';
-  return `${day}-${month}-${year.slice(2)}`;
+  return `${day}.${month}.${year.slice(2)}`;
 }
 
 function getCurrentWeekStart() {

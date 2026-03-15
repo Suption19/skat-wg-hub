@@ -1,6 +1,6 @@
 ﻿const { getAll, getOne, run } = require('../db');
 
-const ALLOWED_CYCLES = new Set(['once', 'weekly', 'monthly']);
+const ALLOWED_CYCLES = new Set(['once', 'weekly', 'biweekly', 'monthly']);
 
 function parseCsvToIds(csv) {
   if (!csv) return [];
@@ -17,7 +17,7 @@ function parseCsvToNames(csv) {
 
 function validateCycleFields(taskType) {
   if (!ALLOWED_CYCLES.has(taskType.cycle)) {
-    throw new Error('cycle muss once, weekly oder monthly sein');
+    throw new Error('cycle muss once, weekly, biweekly oder monthly sein');
   }
 
   if (taskType.cycle === 'once' && !taskType.oneTimeDate) {

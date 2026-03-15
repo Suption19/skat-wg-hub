@@ -53,6 +53,11 @@ function weekRotationIndex(weekStart) {
   return Math.floor((weekStartDate - epochDate) / (7 * MS_PER_DAY));
 }
 
+function isEvenWeekFromEpoch(weekStart) {
+  const index = weekRotationIndex(weekStart);
+  return ((index % 2) + 2) % 2 === 0;
+}
+
 async function getStatsStartWeek(defaultWeekStart) {
   await run(
     `
@@ -90,6 +95,7 @@ async function getDueTaskTypes(weekStart) {
 
   return candidates.filter((taskType) => {
     if (taskType.cycle === 'weekly') return true;
+    if (taskType.cycle === 'biweekly') return isEvenWeekFromEpoch(weekStart);
     if (taskType.cycle === 'once') {
       return Boolean(taskType.oneTimeDate) && taskType.oneTimeDate >= weekStart && taskType.oneTimeDate <= weekEnd;
     }

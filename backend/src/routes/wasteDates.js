@@ -7,9 +7,23 @@ const {
   updateWasteDate,
   patchWasteDate,
   deleteWasteDate,
+  importIcsData,
 } = require('../services/wasteDateService');
 
 const router = express.Router();
+
+router.post('/import', async (req, res, next) => {
+  try {
+    const { icsData } = req.body;
+    if (!icsData) {
+      return res.status(400).json({ error: 'ICS Daten fehlen' });
+    }
+    const count = await importIcsData(icsData);
+    res.json({ message: `${count} Termine importiert.`, count });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get('/', async (req, res, next) => {
   try {

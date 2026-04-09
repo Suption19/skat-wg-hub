@@ -8,6 +8,7 @@ function WasteDatesSection() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
+  const [uploadMessage, setUploadMessage] = useState('');
 
   async function loadWasteDates() {
     const response = await requestJson('/api/waste-dates');
@@ -21,6 +22,7 @@ function WasteDatesSection() {
   async function handleSubmit(event) {
     event.preventDefault();
     setError('');
+    setUploadMessage('');
 
     try {
       await requestJson('/api/waste-dates', {
@@ -32,6 +34,32 @@ function WasteDatesSection() {
     } catch (err) {
       setError(err.message);
     }
+  }
+
+  async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setError('');
+    setUploadMessage('');
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target.result;
+        const res = await requestJson('/api/waste-dates/import', {
+          method: 'POST',
+          body: JSON.stringify({ icsData: text }),
+        });
+        setUploadMessage(res.message);
+        await loadWasteDates();
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    reader.readAsText(file);
+    // Reset file input
+    event.target.value = null;
   }
 
   async function handleDelete(id) {
@@ -47,8 +75,15 @@ function WasteDatesSection() {
   return (
     <section className="card data-section">
       <div className="section-headline">
-        <h2>Muelltermine</h2>
+        <h2>Abfuhrkalender</h2>
         <p>Plan für Restmüll, Papier und Bio inkl. Notizen.</p>
+      </div>
+
+      <div style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}>
+        <h3>ICS Import</h3>
+        <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Lade eine .ics Datei des Abfuhrkalenders hoch (z.B. vom Abfallwirtschaftsbetrieb):</p>
+        <input type="file" accept=".ics" onChange={handleFileUpload} />
+        {uploadMessage && <p style={{ color: 'green', marginTop: '0.5rem' }}>{uploadMessage}</p>}
       </div>
 
       <form className="inline-form grid-2" onSubmit={handleSubmit}>

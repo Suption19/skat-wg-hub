@@ -78,6 +78,52 @@ async function deleteWasteDate(id) {
   return current;
 }
 
+async function importIcsData(icsData) {
+  const lines = String(icsData).split(/\r?\n/);
+  const events = [];
+  let currentEvent = null;
+
+  for (let line of lines) {
+    if (line.startsWith('BEGIN:VEVENT')) {
+      currentEvent = {};
+    } else if (line.startsWith('END:VEVENT')) {
+      if (currentEvent && currentEvent.date && currentEvent.type) {
+        events.push(currentEvent);
+      }
+      currentEvent = null;
+    } else if (currentEvent) {
+      if (line.startsWith('DTSTART')) {
+        const match = line.match(/:(\d{4})(\d{2})(\d{2})/);
+        if (match) {
+          currentEvent.date = `${match[1]}-${match[2]}-${match[3]}`;
+        }
+      } else if (line.startsWith('SUMMARY:')) {
+        currentEvent.type = line.substring(8).trim();
+      }
+    }
+  }
+
+  let count = 0;
+  for (const event of events) {
+    // Check if it already exists to avoid duplicates, or just insert
+    // A simple INSERT OR IGNORE won't work without UNIQUE constraint.
+    const existing = await getOne(
+      'SELECT id FROM waste_dates WHERE date = ? AND type = ?',
+      [event.date, event.type]
+    );
+
+    if (!existing) {
+      await run('INSERT INTO waste_dates (type, date, note) VALUES (?, ?, ?)', [
+        event.type,
+        event.date,
+        null,
+      ]);
+      count++;
+    }
+  }
+  return count;
+}
+
 module.exports = {
   listWasteDates,
   getWasteDateById,
@@ -85,5 +131,6 @@ module.exports = {
   updateWasteDate,
   patchWasteDate,
   deleteWasteDate,
+  importIcsData,
 };
 

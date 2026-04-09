@@ -6,37 +6,6 @@ const sqlite3 = require('sqlite3').verbose();
 const START_TASK_TYPES = ['Müll rausbringen', 'Küche aufräumen', 'Staubsaugen'];
 const DEFAULT_PASSWORD = '1234';
 
-const FIXED_WASTE_SCHEDULE_2026 = [
-  { date: '2026-01-02', type: 'Restmüll' },
-  { date: '2026-01-03', type: 'Gelber Sack / Altpapier' },
-  { date: '2026-01-14', type: 'Restmüll' },
-  { date: '2026-01-15', type: 'Gelber Sack' },
-  { date: '2026-01-28', type: 'Restmüll' },
-  { date: '2026-01-29', type: 'Gelber Sack / Altpapier' },
-  { date: '2026-03-11', type: 'Restmüll' },
-  { date: '2026-03-12', type: 'Gelber Sack' },
-  { date: '2026-03-25', type: 'Restmüll' },
-  { date: '2026-03-26', type: 'Gelber Sack / Altpapier' },
-  { date: '2026-05-06', type: 'Restmüll' },
-  { date: '2026-05-07', type: 'Gelber Sack' },
-  { date: '2026-05-20', type: 'Restmüll' },
-  { date: '2026-05-21', type: 'Gelber Sack / Altpapier' },
-  { date: '2026-07-01', type: 'Restmüll' },
-  { date: '2026-07-02', type: 'Gelber Sack' },
-  { date: '2026-07-15', type: 'Restmüll' },
-  { date: '2026-07-16', type: 'Gelber Sack / Altpapier' },
-  { date: '2026-07-29', type: 'Restmüll' },
-  { date: '2026-07-30', type: 'Gelber Sack' },
-  { date: '2026-09-09', type: 'Restmüll' },
-  { date: '2026-09-10', type: 'Gelber Sack / Altpapier' },
-  { date: '2026-09-23', type: 'Restmüll' },
-  { date: '2026-09-24', type: 'Gelber Sack' },
-  { date: '2026-11-04', type: 'Restmüll' },
-  { date: '2026-11-05', type: 'Gelber Sack / Altpapier' },
-  { date: '2026-11-18', type: 'Restmüll' },
-  { date: '2026-11-19', type: 'Gelber Sack' },
-];
-
 const dataDir = path.resolve(__dirname, '../../data');
 const dbPath = path.join(dataDir, 'wg-hub.db');
 
@@ -457,6 +426,30 @@ async function initializeDatabase() {
   `);
 
   await run(`
+    CREATE TABLE IF NOT EXISTS expenses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      resident_id INTEGER NOT NULL,
+      amount REAL NOT NULL,
+      description TEXT,
+      date TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (resident_id) REFERENCES residents(id) ON DELETE CASCADE
+    )
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
+
+  await run('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [
+    'hidden_tabs',
+    '["Abfuhrkalender"]'
+  ]);
+
+  await run(`
     CREATE TABLE IF NOT EXISTS app_meta (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -491,14 +484,7 @@ async function initializeDatabase() {
     }
   }
 
-  await run('DELETE FROM waste_dates');
-  for (const wasteDate of FIXED_WASTE_SCHEDULE_2026) {
-    await run('INSERT OR IGNORE INTO waste_dates (type, date, note) VALUES (?, ?, ?)', [
-      wasteDate.type,
-      wasteDate.date,
-      null,
-    ]);
-  }
+  // Mülltermine werden nun primär über den Abfuhrkalender (ICS) Import gefüllt
 }
 
 module.exports = {

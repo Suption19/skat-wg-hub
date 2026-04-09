@@ -15,6 +15,8 @@ const weeklyAssignmentRouter = require('./routes/weeklyAssignments');
 const calendarRouter = require('./routes/calendar');
 const shoppingListRouter = require('./routes/shoppingList');
 const skatRouter = require('./routes/skat');
+const settingsRouter = require('./routes/settings');
+const expensesRouter = require('./routes/expenses');
 const { requireAuth } = require('./middleware/requireAuth');
 
 const app = express();
@@ -41,6 +43,8 @@ app.use('/api/weekly-assignments', weeklyAssignmentRouter);
 app.use('/api/calendar', calendarRouter);
 app.use('/api/shopping-list', shoppingListRouter);
 app.use('/api/skat', skatRouter);
+app.use('/api/settings', settingsRouter);
+app.use('/api/expenses', expensesRouter);
 
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'API-Endpunkt nicht gefunden' });

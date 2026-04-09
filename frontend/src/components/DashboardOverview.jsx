@@ -11,14 +11,14 @@ const EVENT_LABELS = {
 };
 
 const FINISHED_TASK_MESSAGES = [
-  'Tomasz ist sehr stolz auf dich. Finn hat schon den imaginären Pokal poliert.',
-  'Nele vergibt heute 5 von 5 Sternen für deinen WG-Endgegner-Run.',
-  'Leila sagt: Das war so gut, sogar der Putzplan hat geklatscht.',
-  'Tomasz und Finn diskutieren gerade, wer dir zuerst eine High Five geben darf.',
-  'Nele und Leila bestätigen offiziell: Heute bist du WG-MVP.',
+  'Die Mitbewohner sind extrem stolz auf dich!',
+  'Dafür gibt es 5 von 5 Sternen für deinen WG-Endgegner-Run.',
+  'Das war so gut, sogar der Putzplan hat geklatscht.',
+  'Jemand poliert schon den imaginären Pokal für dich.',
+  'Alle bestätigen offiziell: Heute bist du WG-MVP.',
   'Die WG-Headline des Tages lautet: Mission erledigt, Chaos vertagt.',
-  'Finn meint: So sauber war die Woche zuletzt im Paralleluniversum.',
-  'Tomasz nickt zufrieden, Nele lacht, Leila feiert und Finn macht Victory-Dance.',
+  'So sauber war die Woche zuletzt im Paralleluniversum.',
+  'Die ganze WG feiert gerade deinen beeindruckenden Victory-Dance.',
 ];
 
 function formatShortDate(isoDate) {

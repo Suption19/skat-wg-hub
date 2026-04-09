@@ -113,7 +113,7 @@ Im Netzwerk erreichbar unter:
 
 ## Datenmodelle (aktueller Stand)
 
-- `residents`: feste Bewohner (Tomasz, Finn, Nele, Leila)
+- `residents`: dynamisch konfigurierbare WG-Bewohner
 - `task_types`: Aufgabentypen mit Zyklus (`once`, `weekly`, `monthly`)
 - `task_type_residents`: Zuordnung, welche Bewohner pro Aufgabentyp berücksichtigt werden
 - `weekly_assignments`: automatisch generierte Wochenzuweisungen mit fairer Rotation

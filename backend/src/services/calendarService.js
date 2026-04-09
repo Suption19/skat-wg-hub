@@ -2,13 +2,6 @@ const { getAll, getOne, run } = require('../db');
 
 const ALLOWED_EVENT_CATEGORIES = new Set(['termin', 'muell', 'geburtstag']);
 
-const FIXED_BIRTHDAYS = [
-  { name: 'Tomasz', monthDay: '05-04', birthday: '2001-05-04' },
-  { name: 'Finn', monthDay: '03-06', birthday: '2002-03-06' },
-  { name: 'Nele', monthDay: '03-21', birthday: '2001-03-21' },
-  { name: 'Leila', monthDay: '11-07', birthday: '2000-11-07' },
-];
-
 function toIsoDate(date) {
   return date.toISOString().slice(0, 10);
 }
@@ -255,19 +248,6 @@ async function listCalendarEvents(yearInput) {
         })
       );
     }
-  }
-
-  for (const birthday of FIXED_BIRTHDAYS) {
-    const date = `${year}-${birthday.monthDay}`;
-    items.push(
-      mapCalendarItem({
-        id: `birthday-${birthday.name.toLowerCase()}-${year}`,
-        date,
-        category: 'geburtstag',
-        title: `${birthday.name} Geburtstag`,
-        note: `Geboren am ${birthday.birthday}`,
-      })
-    );
   }
 
   for (const absence of absences) {

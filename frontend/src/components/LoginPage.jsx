@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, onRegister }) {
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -12,7 +13,11 @@ function LoginPage({ onLogin }) {
     setError('');
     setIsSubmitting(true);
     try {
-      await onLogin(form);
+      if (isRegisterMode) {
+        await onRegister(form);
+      } else {
+        await onLogin(form);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -23,8 +28,12 @@ function LoginPage({ onLogin }) {
   return (
     <div className="login-page">
       <section className="login-card">
-        <h1>WG Hub Login</h1>
-        <p>Melde dich an, um die App zu nutzen.</p>
+        <h1>WG Hub {isRegisterMode ? 'Registrierung' : 'Login'}</h1>
+        <p>
+          {isRegisterMode
+            ? 'Registriere hier deinen eigenen Bewohner-Account.'
+            : 'Melde dich an, um die App zu nutzen.'}
+        </p>
 
         <form onSubmit={handleSubmit} className="login-form">
           <label>
@@ -48,16 +57,25 @@ function LoginPage({ onLogin }) {
               onChange={(event) =>
                 setForm((current) => ({ ...current, password: event.target.value }))
               }
-              autoComplete="current-password"
+              autoComplete={isRegisterMode ? "new-password" : "current-password"}
             />
           </label>
 
           {error ? <p className="error-text">{error}</p> : null}
 
           <button type="submit" className="auth-primary-button" disabled={isSubmitting}>
-            {isSubmitting ? 'Einloggen...' : 'Einloggen'}
+            {isSubmitting
+              ? (isRegisterMode ? 'Registrieren...' : 'Einloggen...')
+              : (isRegisterMode ? 'Registrieren' : 'Einloggen')}
           </button>
         </form>
+        <button
+          type="button"
+          onClick={() => setIsRegisterMode(!isRegisterMode)}
+          style={{ marginTop: '1rem', background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}
+        >
+          {isRegisterMode ? 'Zurück zum Login' : 'Noch kein Account? Hier registrieren'}
+        </button>
       </section>
     </div>
   );

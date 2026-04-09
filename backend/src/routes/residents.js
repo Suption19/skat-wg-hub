@@ -38,8 +38,8 @@ router.post('/', async (req, res, next) => {
     res.status(201).json(resident);
   } catch (error) {
     if (
-      error.message.includes('erforderlich') ||
-      error.message.includes('festgelegt')
+      error.message === 'Name ist erforderlich' ||
+      error.message === 'Ein Bewohner mit diesem Namen existiert bereits'
     ) {
       return res.status(400).json({ error: error.message });
     }

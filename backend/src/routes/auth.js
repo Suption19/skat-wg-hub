@@ -9,6 +9,7 @@ const {
   deleteSessionByToken,
   deleteSessionsForUser,
   changePassword,
+  register,
 } = require('../services/authService');
 const { SESSION_COOKIE_NAME, requireAuth, resolveAuth } = require('../middleware/requireAuth');
 
@@ -31,8 +32,37 @@ function toPublicUser(user) {
     residentId: user.residentId,
     residentName: user.residentName || user.username,
     mustChangePassword: Boolean(user.mustChangePassword),
+    isAdmin: Boolean(user.isAdmin),
   };
 }
+
+router.post('/register', async (req, res, next) => {
+  try {
+    const username = String(req.body.username || '').trim();
+    const password = String(req.body.password || '');
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Benutzername und Passwort sind erforderlich' });
+    }
+
+    if (password.length < 4) {
+      return res.status(400).json({ error: 'Passwort muss mindestens 4 Zeichen haben' });
+    }
+
+    const user = await register(username, password);
+
+    const session = await createSession(user.id);
+    res.cookie(SESSION_COOKIE_NAME, session.token, getCookieOptions());
+
+    const publicUser = await getUserById(user.id);
+    return res.status(201).json({ user: toPublicUser(publicUser) });
+  } catch (error) {
+    if (error.message === 'Benutzername bereits vergeben.') {
+      return res.status(409).json({ error: error.message });
+    }
+    return next(error);
+  }
+});
 
 router.post('/login', async (req, res, next) => {
   try {

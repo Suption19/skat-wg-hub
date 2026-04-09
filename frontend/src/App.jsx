@@ -9,8 +9,9 @@ import PasswordSettingsSection from './components/PasswordSettingsSection';
 import SkatSection from './components/SkatSection';
 import TaskStatusSection from './components/TaskStatusSection';
 import TasksSection from './components/TasksSection';
+import ResidentsSection from './components/ResidentsSection';
 
-const navItems = [
+const baseNavItems = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'tasks', label: 'Aufgabenplan' },
   { id: 'taskStatus', label: 'Aufgabenstatus' },
@@ -71,6 +72,17 @@ function App() {
     setResidents(residentsRes.items || []);
   }
 
+  async function handleRegister(credentials) {
+    const response = await requestJson('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+
+    setCurrentUser(response.user || null);
+    const residentsRes = await requestJson('/api/residents');
+    setResidents(residentsRes.items || []);
+  }
+
   async function handleLogout() {
     try {
       await requestJson('/api/auth/logout', { method: 'POST' });
@@ -81,12 +93,21 @@ function App() {
     }
   }
 
+  const navItems = useMemo(() => {
+    const items = [...baseNavItems];
+    if (currentUser?.isAdmin) {
+      items.push({ id: 'residents', label: 'Bewohner' });
+    }
+    return items;
+  }, [currentUser]);
+
   const activeResidentId = currentUser ? currentUser.residentId : null;
 
   const activeContent = useMemo(() => {
     if (activeView === 'settings') {
       return <PasswordSettingsSection onPasswordChanged={setCurrentUser} />;
     }
+    if (activeView === 'residents') return <ResidentsSection isAdmin={currentUser?.isAdmin} />;
     if (activeView === 'tasks') return <TasksSection />;
     if (activeView === 'taskStatus') return <TaskStatusSection />;
     if (activeView === 'skat') return <SkatSection />;
@@ -111,7 +132,7 @@ function App() {
   }
 
   if (!currentUser) {
-    return <LoginPage onLogin={handleLogin} />;
+    return <LoginPage onLogin={handleLogin} onRegister={handleRegister} />;
   }
 
   return (

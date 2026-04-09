@@ -47,7 +47,8 @@ async function getUserByUsername(username) {
         username,
         password_hash AS passwordHash,
         resident_id AS residentId,
-        must_change_password AS mustChangePassword
+        must_change_password AS mustChangePassword,
+        is_admin AS isAdmin
       FROM users
       WHERE username = ?
     `,
@@ -63,6 +64,7 @@ async function getUserById(id) {
         u.username,
         u.resident_id AS residentId,
         u.must_change_password AS mustChangePassword,
+        u.is_admin AS isAdmin,
         r.name AS residentName
       FROM users u
       LEFT JOIN residents r ON r.id = u.resident_id
@@ -104,6 +106,7 @@ async function getSessionByToken(token) {
         u.username,
         u.resident_id AS residentId,
         u.must_change_password AS mustChangePassword,
+        u.is_admin AS isAdmin,
         r.name AS residentName
       FROM auth_sessions s
       JOIN users u ON u.id = s.user_id
@@ -141,6 +144,44 @@ async function changePassword(userId, newPassword) {
   return getUserById(userId);
 }
 
+async function createUserForResident(residentId, username, isAdmin = false, password = '1234') {
+  await run(
+    `
+      INSERT INTO users (username, password_hash, resident_id, must_change_password, is_admin)
+      VALUES (?, ?, ?, ?, ?)
+    `,
+    [username, createPasswordHash(password), residentId, 1, isAdmin ? 1 : 0]
+  );
+}
+
+async function register(username, password) {
+  const adminCount = await getOne('SELECT COUNT(*) as count FROM users WHERE is_admin = 1');
+  const isAdmin = adminCount && adminCount.count === 0;
+
+  const existingUser = await getOne('SELECT id FROM users WHERE username = ?', [username]);
+  if (existingUser) {
+    throw new Error('Benutzername bereits vergeben.');
+  }
+
+  // Create Resident
+  const residentResult = await run(
+    'INSERT INTO residents (name, color) VALUES (?, ?)',
+    [username, '#7aa6ff'] // default color
+  );
+
+  // Create User
+  await createUserForResident(residentResult.id, username, isAdmin, password);
+
+  // Important: first user doesn't need to change password to log in.
+  // Actually, regular users who register themselves shouldn't need to either.
+  await run(
+    'UPDATE users SET must_change_password = 0 WHERE username = ?',
+    [username]
+  );
+
+  return getUserByUsername(username);
+}
+
 module.exports = {
   SESSION_TTL_DAYS,
   getUserByUsername,
@@ -152,5 +193,7 @@ module.exports = {
   deleteSessionsForUser,
   isSessionExpired,
   changePassword,
+  createUserForResident,
+  register,
 };
 

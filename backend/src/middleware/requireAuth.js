@@ -25,6 +25,7 @@ async function resolveAuth(req) {
     residentId: session.residentId,
     residentName: session.residentName,
     mustChangePassword: Boolean(session.mustChangePassword),
+    isAdmin: Boolean(session.isAdmin),
     token,
   };
 }

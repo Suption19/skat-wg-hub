@@ -1,7 +1,5 @@
 ﻿const { getAll, getOne, run } = require('../db');
 
-const FIXED_NAMES = new Set(['Tomasz', 'Finn', 'Nele', 'Leila']);
-
 function mapResidentPayload(payload = {}) {
   return {
     name: String(payload.name || '').trim(),
@@ -32,7 +30,26 @@ async function getResidentById(id) {
 }
 
 async function createResident(payload) {
-  throw new Error('Bewohner sind in diesem Stand auf Tomasz, Finn, Nele und Leila festgelegt');
+  const resident = mapResidentPayload(payload);
+  if (!resident.name) {
+    throw new Error('Name ist erforderlich');
+  }
+
+  const existing = await getOne('SELECT id FROM residents WHERE name = ?', [resident.name]);
+  if (existing) {
+    throw new Error('Ein Bewohner mit diesem Namen existiert bereits');
+  }
+
+  const result = await run(
+    'INSERT INTO residents (name, email, color) VALUES (?, ?, ?)',
+    [resident.name, resident.email, resident.color]
+  );
+  
+  // Create user automatically
+  const { createUserForResident } = require('./authService');
+  await createUserForResident(result.id, resident.name, false);
+
+  return getResidentById(result.id);
 }
 
 async function updateResident(id, payload) {
@@ -40,19 +57,24 @@ async function updateResident(id, payload) {
   if (!current) return null;
 
   const resident = mapResidentPayload(payload);
-  if (!resident.name || !FIXED_NAMES.has(resident.name)) {
-    throw new Error('name ist erforderlich');
+  if (!resident.name) {
+    throw new Error('Name ist erforderlich');
   }
 
   if (resident.name !== current.name) {
-    throw new Error('Umbenennen von Bewohnern ist aktuell deaktiviert');
+    const existing = await getOne('SELECT id FROM residents WHERE name = ?', [resident.name]);
+    if (existing && existing.id !== current.id) {
+      throw new Error('Ein Bewohner mit diesem Namen existiert bereits');
+    }
   }
 
   await run(
     'UPDATE residents SET name = ?, email = ?, color = ? WHERE id = ?',
     [resident.name, resident.email, resident.color, id]
   );
-
+  
+  // Update linked user if name is changed (optional, but keep simple for now)
+  // or user just logs in with old username
   return getResidentById(id);
 }
 
@@ -68,7 +90,9 @@ async function patchResident(id, payload) {
 }
 
 async function deleteResident(id) {
-  throw new Error('Bewohner können in diesem Stand nicht gelöscht werden');
+  const current = await getResidentById(id);
+  if (!current) return;
+  await run('DELETE FROM residents WHERE id = ?', [id]);
 }
 
 module.exports = {

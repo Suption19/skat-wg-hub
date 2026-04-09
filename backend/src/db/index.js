@@ -3,15 +3,8 @@ const path = require('path');
 const crypto = require('crypto');
 const sqlite3 = require('sqlite3').verbose();
 
-const FIXED_RESIDENTS = [
-  { name: 'Tomasz', email: 'tomasz@wg.local', color: '#7aa6ff' },
-  { name: 'Finn', email: 'finn@wg.local', color: '#89dfc8' },
-  { name: 'Nele', email: 'nele@wg.local', color: '#f4b773' },
-  { name: 'Leila', email: 'leila@wg.local', color: '#d79cff' },
-];
-
 const START_TASK_TYPES = ['Müll rausbringen', 'Küche aufräumen', 'Staubsaugen'];
-const DEFAULT_PASSWORD = '123';
+const DEFAULT_PASSWORD = '1234';
 
 const FIXED_WASTE_SCHEDULE_2026 = [
   { date: '2026-01-02', type: 'Restmüll' },
@@ -287,6 +280,7 @@ async function initializeDatabase() {
       password_hash TEXT NOT NULL,
       resident_id INTEGER,
       must_change_password INTEGER NOT NULL DEFAULT 1,
+      is_admin INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (resident_id) REFERENCES residents(id) ON DELETE SET NULL
     )
@@ -294,6 +288,7 @@ async function initializeDatabase() {
 
   await ensureColumn('users', 'resident_id', 'INTEGER');
   await ensureColumn('users', 'must_change_password', 'INTEGER NOT NULL DEFAULT 1');
+  await ensureColumn('users', 'is_admin', 'INTEGER NOT NULL DEFAULT 0');
 
   await run(`
     CREATE TABLE IF NOT EXISTS auth_sessions (
@@ -473,68 +468,6 @@ async function initializeDatabase() {
     getCurrentWeekStartIso(),
   ]);
 
-  for (const resident of FIXED_RESIDENTS) {
-    await run('INSERT OR IGNORE INTO residents (name, email, color) VALUES (?, ?, ?)', [
-      resident.name,
-      resident.email,
-      resident.color,
-    ]);
-
-    await run('UPDATE residents SET email = ?, color = ? WHERE name = ?', [
-      resident.email,
-      resident.color,
-      resident.name,
-    ]);
-  }
-
-  // In diesem Stand arbeiten wir bewusst nur mit den vier festen Bewohnern.
-  await run(
-    `DELETE FROM residents WHERE name NOT IN (?, ?, ?, ?)`,
-    FIXED_RESIDENTS.map((resident) => resident.name)
-  );
-
-  const residents = await getAll('SELECT id, name FROM residents ORDER BY id ASC');
-  const allResidentIds = residents.map((resident) => resident.id);
-
-  for (const resident of FIXED_RESIDENTS) {
-    const linkedResident = residents.find((item) => item.name === resident.name);
-    if (!linkedResident) continue;
-
-    const existingUser = await getOne(
-      'SELECT id, password_hash AS passwordHash FROM users WHERE username = ?',
-      [resident.name]
-    );
-
-    if (!existingUser) {
-      await run(
-        `
-          INSERT INTO users (username, password_hash, resident_id, must_change_password)
-          VALUES (?, ?, ?, 1)
-        `,
-        [resident.name, createPasswordHashSync(DEFAULT_PASSWORD), linkedResident.id]
-      );
-      continue;
-    }
-
-    if (!existingUser.passwordHash) {
-      await run(
-        'UPDATE users SET password_hash = ?, resident_id = ? WHERE id = ?',
-        [createPasswordHashSync(DEFAULT_PASSWORD), linkedResident.id, existingUser.id]
-      );
-      continue;
-    }
-
-    await run('UPDATE users SET resident_id = ? WHERE id = ?', [
-      linkedResident.id,
-      existingUser.id,
-    ]);
-  }
-
-  await run(
-    'DELETE FROM users WHERE username NOT IN (?, ?, ?, ?)',
-    FIXED_RESIDENTS.map((resident) => resident.name)
-  );
-
   await run('DELETE FROM auth_sessions WHERE expires_at <= datetime(\'now\')');
 
   const taskTypeCount = await getOne('SELECT COUNT(*) AS total FROM task_types');
@@ -548,15 +481,15 @@ async function initializeDatabase() {
         [taskName]
       );
 
-      for (const residentId of allResidentIds) {
+      const residents = await getAll('SELECT id FROM residents ORDER BY id ASC');
+      for (const resident of residents) {
         await run(
           'INSERT OR IGNORE INTO task_type_residents (task_type_id, resident_id) VALUES (?, ?)',
-          [created.id, residentId]
+          [created.id, resident.id]
         );
       }
     }
   }
-
 
   await run('DELETE FROM waste_dates');
   for (const wasteDate of FIXED_WASTE_SCHEDULE_2026) {

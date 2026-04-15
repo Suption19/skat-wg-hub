@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { getResidentVisual } from '../residentVisuals';
 
 const HEADER_SLOGANS = [
@@ -36,20 +36,7 @@ function Header({
   }
 
   return (
-    <header className="topbar" style={{
-      position: 'sticky',
-      top: 0,
-      zIndex: 50,
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '1rem 2rem',
-      background: 'rgba(255, 255, 255, 0.8)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      borderBottom: '1px solid rgba(0,0,0,0.05)',
-      fontFamily: 'system-ui, sans-serif'
-    }}>
+    <header className="topbar">
       <div className="profile-identity" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <button
           type="button"
@@ -174,26 +161,14 @@ function Header({
         </div>
       </div>
 
-      <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center' }}>
-        <nav className="desktop-nav" style={{ display: 'flex', gap: '0.5rem', '@media(max-width: 768px)': { display: 'none' } }}>
+      <div className="topbar-actions">
+        <nav className="desktop-nav">
           {navItems.map((item) => (
             <button
               key={item.id}
               type="button"
               className={`nav-item ${activeView === item.id ? 'active' : ''}`}
               onClick={() => handleSelect(item.id)}
-              style={{
-                background: activeView === item.id ? 'rgba(0,0,0,0.05)' : 'transparent',
-                border: 'none',
-                padding: '0.5rem 1rem',
-                borderRadius: '9999px',
-                cursor: 'pointer',
-                fontWeight: activeView === item.id ? '600' : '500',
-                color: activeView === item.id ? '#111827' : '#6b7280',
-                transition: 'all 0.2s',
-              }}
-              onMouseOver={(e) => { if (activeView !== item.id) { e.target.style.background = 'rgba(0,0,0,0.03)'; e.target.style.color = '#111827'; } }}
-              onMouseOut={(e) => { if (activeView !== item.id) { e.target.style.background = 'transparent'; e.target.style.color = '#6b7280'; } }}
             >
               <span className="nav-icon" style={{ marginRight: '0.5rem' }}>{item.icon}</span>
               <span className="nav-label">{item.label}</span>
@@ -201,7 +176,7 @@ function Header({
           ))}
         </nav>
 
-        <div className="burger-menu" style={{ display: 'none' }}>
+        <div className="burger-menu">
         <button
           type="button"
           className="burger-button"

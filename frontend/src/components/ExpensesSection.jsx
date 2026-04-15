@@ -96,7 +96,6 @@ function ExpensesSection({ residents }) {
                 required
                 value={form.resident_id}
                 onChange={e => setForm({ ...form, resident_id: e.target.value })}
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}
               >
                 <option value="">Auswählen...</option>
                 {residents.map(r => (
@@ -113,7 +112,6 @@ function ExpensesSection({ residents }) {
                 min="0"
                 value={form.amount}
                 onChange={e => setForm({ ...form, amount: e.target.value })}
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}
               />
             </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: '1 1 140px' }}>
@@ -123,7 +121,6 @@ function ExpensesSection({ residents }) {
                 type="date"
                 value={form.date}
                 onChange={e => setForm({ ...form, date: e.target.value })}
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}
               />
             </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: '2 1 200px' }}>
@@ -134,7 +131,6 @@ function ExpensesSection({ residents }) {
                 value={form.description}
                 onChange={e => setForm({ ...form, description: e.target.value })}
                 placeholder="z.B. Supermarkt"
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}
               />
             </label>
             <button type="submit" disabled={isSaving} style={{ padding: '0.6rem 1.5rem', flex: '1 1 120px', fontWeight: 600, minHeight: '40px' }}>

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { requestJson } from '../api';
 import { getResidentVisual } from '../residentVisuals';
@@ -428,7 +428,7 @@ function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
   }
 
   return (
-    <div className="dashboard-container" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div className="dashboard-container" style={{ padding: '0', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <header className="dashboard-header" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <div>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -444,17 +444,7 @@ function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
         gap: '2rem',
         alignItems: 'start'
       }}>
-        <section className="home-section tasks-section premium-card" style={{
-          background: 'var(--glass-bg, rgba(255,255,255,0.7))',
-          borderRadius: 'var(--radius-lg, 24px)',
-          padding: '2rem',
-          boxShadow: 'var(--shadow-soft, 0 8px 32px rgba(31,38,135,0.07))',
-          border: '1px solid var(--glass-border, rgba(255,255,255,0.8))',
-          backdropFilter: 'blur(10px)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.5rem'
-        }}>
+        <section className="home-section tasks-section premium-card">
           <div className="section-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ fontSize: '1.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📋 Deine Aufgaben</h2>
             <span className="section-meta" style={{ background: 'var(--accent, #6366f1)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.875rem', fontWeight: 600 }}>
@@ -551,17 +541,7 @@ function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
         </div>
       </section>
 
-      <section className="home-section shopping-section premium-card" style={{
-        background: 'var(--glass-bg, rgba(255,255,255,0.7))',
-        borderRadius: 'var(--radius-lg, 24px)',
-        padding: '2rem',
-        boxShadow: 'var(--shadow-soft, 0 8px 32px rgba(31,38,135,0.07))',
-        border: '1px solid var(--glass-border, rgba(255,255,255,0.8))',
-        backdropFilter: 'blur(10px)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.5rem'
-      }}>
+      <section className="home-section shopping-section premium-card">
         <div className="section-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ fontSize: '1.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🛒 Einkaufsliste</h2>
           <span className="section-meta" style={{ background: 'var(--muted, #64748b)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.875rem', fontWeight: 600 }}>
@@ -605,28 +585,17 @@ function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
         </div>
       </section>
 
-      <section className="home-section calendar-section premium-card" style={{
-        background: 'var(--glass-bg, rgba(255,255,255,0.7))',
-        borderRadius: 'var(--radius-lg, 24px)',
-        padding: '2rem',
-        boxShadow: 'var(--shadow-soft, 0 8px 32px rgba(31,38,135,0.07))',
-        border: '1px solid var(--glass-border, rgba(255,255,255,0.8))',
-        backdropFilter: 'blur(10px)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.5rem',
-        gridColumn: '1 / -1' /* Calendar spanning across the grid */
-      }}>
+      <section className="home-section calendar-section premium-card" style={{ gridColumn: '1 / -1' }}>
         <div className="calendar-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <h2 style={{ fontSize: '1.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🗓️ Kalender</h2>
             <strong style={{ fontSize: '1.25rem', color: 'var(--accent)' }}>{monthYearLabel}</strong>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button type="button" className="circle-nav" onClick={() => shiftMonth(-1)} style={{ background: 'var(--card-border)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', transition: 'all 0.2s' }}>
+            <button type="button" className="circle-nav" onClick={() => shiftMonth(-1)}>
               {'<'}
             </button>
-            <button type="button" className="circle-nav" onClick={() => shiftMonth(1)} style={{ background: 'var(--card-border)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', transition: 'all 0.2s' }}>
+            <button type="button" className="circle-nav" onClick={() => shiftMonth(1)}>
               {'>'}
             </button>
           </div>
@@ -695,18 +664,7 @@ function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
         </div>
       </section>
 
-      <section className="home-section skat-preview-section premium-card" style={{
-        background: 'var(--glass-bg, rgba(255,255,255,0.7))',
-        borderRadius: 'var(--radius-lg, 24px)',
-        padding: '2rem',
-        boxShadow: 'var(--shadow-soft, 0 8px 32px rgba(31,38,135,0.07))',
-        border: '1px solid var(--glass-border, rgba(255,255,255,0.8))',
-        backdropFilter: 'blur(10px)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.5rem',
-        gridColumn: '1 / -1'
-      }}>
+      <section className="home-section skat-preview-section premium-card" style={{ gridColumn: '1 / -1' }}>
         <div className="section-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ fontSize: '1.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🏆 Skat-Podium</h2>
           <span className="section-meta" style={{ background: 'var(--muted, #64748b)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.875rem', fontWeight: 600 }}>All-Time</span>

@@ -80,22 +80,23 @@ function ExpensesSection({ residents }) {
   return (
     <section className="card data-section">
       <div className="section-headline">
-        <h2>Ausgaben</h2>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>💰 Ausgaben</h2>
         <p>WG-Ausgaben und wer am meisten bezahlt hat.</p>
       </div>
 
       {error && <p className="error-text">{error}</p>}
 
-      <div className="admin-form" style={{ marginBottom: '2rem' }}>
-        <h3>Neue Ausgabe erfassen</h3>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 1fr) 100px 100px 2fr auto', gap: '1rem', alignItems: 'end' }}>
-            <label>
-              Bewohner
+      <div className="admin-form" style={{ marginBottom: '2rem', backgroundColor: 'var(--surface-color-2)', padding: '1.5rem', borderRadius: '12px' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '1.5rem' }}>Neue Ausgabe erfassen</h3>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end', containerType: 'inline-size' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: '1 1 150px' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Bewohner</span>
               <select
                 required
                 value={form.resident_id}
                 onChange={e => setForm({ ...form, resident_id: e.target.value })}
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}
               >
                 <option value="">Auswählen...</option>
                 {residents.map(r => (
@@ -103,8 +104,8 @@ function ExpensesSection({ residents }) {
                 ))}
               </select>
             </label>
-            <label>
-              Betrag (€)
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: '1 1 100px' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Betrag (€)</span>
               <input
                 required
                 type="number"
@@ -112,63 +113,71 @@ function ExpensesSection({ residents }) {
                 min="0"
                 value={form.amount}
                 onChange={e => setForm({ ...form, amount: e.target.value })}
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}
               />
             </label>
-            <label>
-              Datum
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: '1 1 140px' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Datum</span>
               <input
                 required
                 type="date"
                 value={form.date}
                 onChange={e => setForm({ ...form, date: e.target.value })}
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}
               />
             </label>
-            <label>
-              Beschreibung
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: '2 1 200px' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Beschreibung</span>
               <input
                 required
                 type="text"
                 value={form.description}
                 onChange={e => setForm({ ...form, description: e.target.value })}
                 placeholder="z.B. Supermarkt"
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}
               />
             </label>
-            <button type="submit" disabled={isSaving}>
+            <button type="submit" disabled={isSaving} style={{ padding: '0.6rem 1.5rem', flex: '1 1 120px', fontWeight: 600, minHeight: '40px' }}>
               {isSaving ? 'Speichert...' : 'Hinzufügen'}
             </button>
           </div>
         </form>
       </div>
 
-      <div style={{ marginBottom: '2rem' }}>
-        <h3>Statistik (Gesamtausgaben)</h3>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h3 style={{ marginBottom: '1rem' }}>Statistik (Gesamtausgaben)</h3>
+        <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
           {residents.map(r => {
             const total = totals[r.id] || 0;
             const isMost = most.includes(r.id);
             const isLeast = least.includes(r.id);
             
             let badgeStyle = { 
-              padding: '0.8rem 1.2rem', 
-              borderRadius: '8px', 
-              fontWeight: '500',
-              backgroundColor: 'var(--surface-color-2)' 
+              padding: '0.6rem 1.2rem', 
+              borderRadius: '999px', // Pill shape
+              fontWeight: '600',
+              backgroundColor: 'var(--surface-color)',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
             };
             
             if (isMost) {
-              badgeStyle.backgroundColor = '#d4edda';
-              badgeStyle.color = '#155724';
-              badgeStyle.border = '1px solid #c3e6cb';
+              badgeStyle.backgroundColor = '#ecfdf5'; // min-green-50
+              badgeStyle.color = '#047857'; // text-green-700
+              badgeStyle.border = '1px solid #10b981'; // border-green-500
             } else if (isLeast) {
-              badgeStyle.backgroundColor = '#f8d7da';
-              badgeStyle.color = '#721c24';
-              badgeStyle.border = '1px solid #f5c6cb';
+              badgeStyle.backgroundColor = '#fef2f2'; // bg-red-50
+              badgeStyle.color = '#b91c1c'; // text-red-700
+              badgeStyle.border = '1px solid #ef4444'; // border-red-500
             }
 
             return (
               <div key={r.id} style={badgeStyle}>
-                <div>{r.name}</div>
-                <div style={{ fontSize: '1.2rem', marginTop: '0.2rem' }}>{total.toFixed(2)} €</div>
+                <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>{r.name}</span>
+                <span style={{ fontSize: '1rem' }}>{total.toFixed(2)} €</span>
               </div>
             )
           })}

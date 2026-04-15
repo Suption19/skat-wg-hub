@@ -428,14 +428,39 @@ function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
   }
 
   return (
-    <section className="home-screen">
-      <section className="home-section tasks-section">
-        <div className="section-row">
-          <h2>Deine Aufgaben</h2>
-          <span className="section-meta">
-            KW ab {formatWeekStartLabel(data.weekStart)}
-          </span>
+    <div className="dashboard-container" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <header className="dashboard-header" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <div>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            🏢 WG Dashboard
+          </h1>
+          <p style={{ color: 'var(--muted)', fontSize: '1.1rem', marginTop: '0.5rem' }}>Alles Wichtige auf einen Blick</p>
         </div>
+      </header>
+
+      <div className="dashboard-grid" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+        gap: '2rem',
+        alignItems: 'start'
+      }}>
+        <section className="home-section tasks-section premium-card" style={{
+          background: 'var(--glass-bg, rgba(255,255,255,0.7))',
+          borderRadius: 'var(--radius-lg, 24px)',
+          padding: '2rem',
+          boxShadow: 'var(--shadow-soft, 0 8px 32px rgba(31,38,135,0.07))',
+          border: '1px solid var(--glass-border, rgba(255,255,255,0.8))',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.5rem'
+        }}>
+          <div className="section-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '1.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📋 Deine Aufgaben</h2>
+            <span className="section-meta" style={{ background: 'var(--accent, #6366f1)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.875rem', fontWeight: 600 }}>
+              KW ab {formatWeekStartLabel(data.weekStart)}
+            </span>
+          </div>
 
         <div className="task-stats-row">
           <article className="task-stat-card">
@@ -526,10 +551,22 @@ function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
         </div>
       </section>
 
-      <section className="home-section shopping-section">
-        <div className="section-row">
-          <h2>Einkaufsliste</h2>
-          <span className="section-meta">{shoppingItems.length} Einträge</span>
+      <section className="home-section shopping-section premium-card" style={{
+        background: 'var(--glass-bg, rgba(255,255,255,0.7))',
+        borderRadius: 'var(--radius-lg, 24px)',
+        padding: '2rem',
+        boxShadow: 'var(--shadow-soft, 0 8px 32px rgba(31,38,135,0.07))',
+        border: '1px solid var(--glass-border, rgba(255,255,255,0.8))',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem'
+      }}>
+        <div className="section-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '1.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🛒 Einkaufsliste</h2>
+          <span className="section-meta" style={{ background: 'var(--muted, #64748b)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.875rem', fontWeight: 600 }}>
+            {shoppingItems.length} Einträge
+          </span>
         </div>
 
         <form className="shopping-form" onSubmit={handleAddShoppingItem}>
@@ -568,15 +605,31 @@ function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
         </div>
       </section>
 
-      <section className="home-section calendar-section">
-        <div className="calendar-head">
-          <button type="button" className="circle-nav" onClick={() => shiftMonth(-1)}>
-            {'<'}
-          </button>
-          <h2>{monthYearLabel}</h2>
-          <button type="button" className="circle-nav" onClick={() => shiftMonth(1)}>
-            {'>'}
-          </button>
+      <section className="home-section calendar-section premium-card" style={{
+        background: 'var(--glass-bg, rgba(255,255,255,0.7))',
+        borderRadius: 'var(--radius-lg, 24px)',
+        padding: '2rem',
+        boxShadow: 'var(--shadow-soft, 0 8px 32px rgba(31,38,135,0.07))',
+        border: '1px solid var(--glass-border, rgba(255,255,255,0.8))',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+        gridColumn: '1 / -1' /* Calendar spanning across the grid */
+      }}>
+        <div className="calendar-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h2 style={{ fontSize: '1.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🗓️ Kalender</h2>
+            <strong style={{ fontSize: '1.25rem', color: 'var(--accent)' }}>{monthYearLabel}</strong>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button type="button" className="circle-nav" onClick={() => shiftMonth(-1)} style={{ background: 'var(--card-border)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', transition: 'all 0.2s' }}>
+              {'<'}
+            </button>
+            <button type="button" className="circle-nav" onClick={() => shiftMonth(1)} style={{ background: 'var(--card-border)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', transition: 'all 0.2s' }}>
+              {'>'}
+            </button>
+          </div>
         </div>
 
         {!isCurrentMonth ? (
@@ -642,10 +695,21 @@ function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
         </div>
       </section>
 
-      <section className="home-section skat-preview-section">
-        <div className="section-row">
-          <h2>Skat-Podium</h2>
-          <span className="section-meta">All-Time</span>
+      <section className="home-section skat-preview-section premium-card" style={{
+        background: 'var(--glass-bg, rgba(255,255,255,0.7))',
+        borderRadius: 'var(--radius-lg, 24px)',
+        padding: '2rem',
+        boxShadow: 'var(--shadow-soft, 0 8px 32px rgba(31,38,135,0.07))',
+        border: '1px solid var(--glass-border, rgba(255,255,255,0.8))',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+        gridColumn: '1 / -1'
+      }}>
+        <div className="section-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '1.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🏆 Skat-Podium</h2>
+          <span className="section-meta" style={{ background: 'var(--muted, #64748b)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.875rem', fontWeight: 600 }}>All-Time</span>
         </div>
 
         <div className="skat-podium-grid compact">
@@ -680,10 +744,12 @@ function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
               onOpenSkat();
             }
           }}
+          style={{ padding: '0.75rem 1.5rem', background: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontWeight: 600, alignSelf: 'flex-start', transition: 'background 0.2s' }}
         >
-          Öffnen
+          🏁 Skat Übersicht Öffnen
         </button>
       </section>
+      </div>
 
       {confirmAssignment ? (
         <div
@@ -895,7 +961,7 @@ function DashboardOverview({ residents, activeResidentId, onOpenSkat }) {
           </div>
         </div>
       ) : null}
-    </section>
+    </div>
   );
 }
 

@@ -36,8 +36,21 @@ function Header({
   }
 
   return (
-    <header className="topbar">
-      <div className="profile-identity">
+    <header className="topbar" style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 50,
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '1rem 2rem',
+      background: 'rgba(255, 255, 255, 0.8)',
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
+      borderBottom: '1px solid rgba(0,0,0,0.05)',
+      fontFamily: 'system-ui, sans-serif'
+    }}>
+      <div className="profile-identity" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <button
           type="button"
           className="resident-avatar-button"
@@ -47,16 +60,29 @@ function Header({
             setIsNavOpen(false);
             setIsProfileOpen(false);
           }}
+          style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}
         >
           <span
             className="resident-avatar-large"
-            style={{ backgroundColor: visual.color }}
+            style={{ 
+              backgroundColor: visual.color, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '48px', 
+              height: '48px', 
+              borderRadius: '50%',
+              fontSize: '1.25rem',
+              fontWeight: 'bold',
+              color: '#fff',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}
             aria-hidden="true"
           >
             {visual.avatar}
           </span>
         </button>
-        <div className="profile-menu profile-menu-inline">
+        <div className="profile-menu profile-menu-inline" style={{ position: 'relative' }}>
           <button
             type="button"
             className="identity-trigger"
@@ -66,23 +92,57 @@ function Header({
               setIsProfileOpen((current) => !current);
               setIsNavOpen(false);
             }}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.75rem', 
+              background: isProfileOpen ? 'rgba(0,0,0,0.05)' : 'transparent', 
+              border: 'none', 
+              padding: '0.5rem 1rem', 
+              borderRadius: '9999px',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s'
+            }}
           >
+            <div className="identity-text" style={{ textAlign: 'left' }}>
+              <h1 style={{ margin: 0, fontSize: '1rem', fontWeight: '600', color: '#111827' }}>
+                {currentUser ? currentUser.residentName : 'WG Hub'}
+              </h1>
+              <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', display: 'none' }}>{headerSlogan}</p>
+            </div>
             <span
               className={`identity-chevron ${isProfileOpen ? 'open' : ''}`}
               aria-hidden="true"
+              style={{ 
+                color: '#6b7280', 
+                transform: isProfileOpen ? 'rotate(180deg)' : 'rotate(0)', 
+                transition: 'transform 0.2s',
+                fontSize: '0.875rem'
+              }}
             >
-              ▾
+              ▼
             </span>
-            <div className="identity-text">
-              <h1>{currentUser ? currentUser.residentName : 'WG Hub'}</h1>
-              <p>{headerSlogan}</p>
-            </div>
           </button>
 
           {isProfileOpen ? (
-            <div className="profile-panel card">
-              <h3>Profil</h3>
-              <p>Eingeloggt als {currentUser ? currentUser.username : '-'}</p>
+            <div className="profile-panel card" style={{
+              position: 'absolute',
+              top: 'calc(100% + 0.5rem)',
+              left: 0,
+              background: '#fff',
+              borderRadius: '16px',
+              padding: '1rem',
+              minWidth: '220px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+              border: '1px solid rgba(0,0,0,0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem'
+            }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Profil</h3>
+              <p style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', color: '#374151', fontWeight: '500' }}>
+                {currentUser ? currentUser.username : '-'}
+              </p>
               <button
                 type="button"
                 className="resident-option"
@@ -90,6 +150,9 @@ function Header({
                   setIsProfileOpen(false);
                   if (onOpenSettings) onOpenSettings();
                 }}
+                style={{ width: '100%', textAlign: 'left', padding: '0.5rem 0.75rem', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.875rem', color: '#4b5563' }}
+                onMouseOver={(e) => { e.target.style.background = '#f3f4f6'; e.target.style.color = '#111827'; }}
+                onMouseOut={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#4b5563'; }}
               >
                 Passwort ändern
               </button>
@@ -100,6 +163,9 @@ function Header({
                   setIsProfileOpen(false);
                   if (onLogout) onLogout();
                 }}
+                style={{ width: '100%', textAlign: 'left', padding: '0.5rem 0.75rem', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.875rem', color: '#ef4444' }}
+                onMouseOver={(e) => { e.target.style.background = '#fee2e2'; e.target.style.color = '#dc2626'; }}
+                onMouseOut={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#ef4444'; }}
               >
                 Abmelden
               </button>
@@ -108,8 +174,34 @@ function Header({
         </div>
       </div>
 
-      <div className="topbar-actions">
-        <div className="burger-menu">
+      <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center' }}>
+        <nav className="desktop-nav" style={{ display: 'flex', gap: '0.5rem', '@media(max-width: 768px)': { display: 'none' } }}>
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`nav-item ${activeView === item.id ? 'active' : ''}`}
+              onClick={() => handleSelect(item.id)}
+              style={{
+                background: activeView === item.id ? 'rgba(0,0,0,0.05)' : 'transparent',
+                border: 'none',
+                padding: '0.5rem 1rem',
+                borderRadius: '9999px',
+                cursor: 'pointer',
+                fontWeight: activeView === item.id ? '600' : '500',
+                color: activeView === item.id ? '#111827' : '#6b7280',
+                transition: 'all 0.2s',
+              }}
+              onMouseOver={(e) => { if (activeView !== item.id) { e.target.style.background = 'rgba(0,0,0,0.03)'; e.target.style.color = '#111827'; } }}
+              onMouseOut={(e) => { if (activeView !== item.id) { e.target.style.background = 'transparent'; e.target.style.color = '#6b7280'; } }}
+            >
+              <span className="nav-icon" style={{ marginRight: '0.5rem' }}>{item.icon}</span>
+              <span className="nav-label">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="burger-menu" style={{ display: 'none' }}>
         <button
           type="button"
           className="burger-button"

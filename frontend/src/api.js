@@ -18,7 +18,7 @@ export async function requestJson(path, options = {}) {
     } catch (error) {
       // Ignore parse errors for empty responses.
     }
-    const error = new Error(message);
+    const error = new Error(`${message} (${response.status})`);
     error.status = response.status;
     throw error;
   }

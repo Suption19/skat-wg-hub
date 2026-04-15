@@ -1,7 +1,7 @@
-﻿const app = require('./app');
+const app = require('./app');
 const { initializeDatabase } = require('./db');
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 3001;
 
 async function bootstrap() {
   try {
